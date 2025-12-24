@@ -13,6 +13,14 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 
+def extract_domain(url):
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+
+        if domain.startswith("www."):
+            domain = domain[4:]
+        return domain
+
 def get_high_res_favicon(url):
     # Fake a Browser User-Agent 
     headers = {
@@ -62,10 +70,11 @@ def get_high_res_favicon(url):
 
             candidates.append({'url': full_url, 'score': score, 'sizes': sizes or "unknown"})
 
-        # Sorting candidates by score (Descending)
+        # fallback to google favicon service
         if not candidates:
-            # Fallback to standard location
-            return urljoin(url, "/favicon.ico")
+            domain = extract_domain(url)
+            logger.info(f"  -> Falling back to Google API for {domain}")
+            return f"https://www.google.com/s2/favicons?domain={domain}&sz=512"
 
         # Sort: Highest score first
         candidates.sort(key=lambda x: x['score'], reverse=True)
@@ -82,15 +91,6 @@ def get_high_res_favicon(url):
         logger.error(f"Error fetching {url}: {e}")
         return None
 
-
-
-def extract_domain(url):
-        parsed_url = urlparse(url)
-        domain = parsed_url.netloc
-
-        if domain.startswith("www."):
-            domain = domain[4:]
-        return domain
         
 
 def discover_and_populate_favicons_from_feed():
